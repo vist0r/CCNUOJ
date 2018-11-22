@@ -1,0 +1,4 @@
+1. Implement limitation of parameter 'mode' in open() and openat() when flag bit 'O_CREAT' is set
+2. Use seccomp to accelerate the current sandbox implementation
+3. Code Review (Especially security check)
+
