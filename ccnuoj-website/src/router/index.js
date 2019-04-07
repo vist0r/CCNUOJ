@@ -3,11 +3,13 @@ import Router from 'vue-router';
 
 import NotFoundPage from '../views/NotFoundPage';
 
-import PhotoPage from '../views/PhotoPage';
+import HomePage from '../views/HomePage';
 
-import IdentityPage from '../views/IdentityPage';
+import UserPage from '../views/UserPage';
 import UserLogin from '../components/User/UserLogin';
 import UserRegister from '../components/User/UserRegister';
+import UserInfoDisplay from '../components/User/UserInfoDisplay';
+import UserInfoEdit from '../components/User/UserInfoEdit';
 
 import ProblemPage from '../views/ProblemPage';
 import ProblemList from '../components/Problem/ProblemList';
@@ -17,9 +19,16 @@ import ContestPage from '../views/ContestPage';
 import ContestList from '../components/Contest/ContestList';
 import ContestDetail from '../components/Contest/ContestDetail';
 import ContestRank from '../components/Contest/ContestRank';
-
 import ContestProblemList from '../components/Contest/Problem/ContestProblemList';
 import ContestProblemDetail from '../components/Contest/Problem/ContestProblemDetail';
+
+import ContestText from '../components/Contest/ContestText';
+import ContestTextEditor from '../components/Contest/ContestTextEditor';
+import ContestRegisterStateDisplay from '../components/Contest/Register/ContestRgisterStateDisplay';
+import ContestRegisterAllList from '../components/Contest/Register/ContestRegisterAllList';
+import ContestRegisterPassedList from '../components/Contest/Register/ContestRegisterPassedList';
+
+import HelpPage from '../views/HelpPage';
 
 Vue.use(Router);
 
@@ -28,13 +37,17 @@ export default new Router({
   routes: [
     {
       path: '/',
-      alias: ['/login', '/register'],
-      component: IdentityPage,
+      redirect: '/home',
+    },
+    {
+      path: '/home',
+      name: 'HomePage',
+      component: HomePage,
+    },
+    {
+      path: '/user',
+      component: UserPage,
       children: [
-        {
-          path: '',
-          redirect: 'login',
-        },
         {
           path: 'login',
           name: 'UserLogin',
@@ -45,12 +58,17 @@ export default new Router({
           name: 'UserRegister',
           component: UserRegister,
         },
+        {
+          path: 'info',
+          name: 'UserInfoDisplay',
+          component: UserInfoDisplay,
+        },
+        {
+          path: 'info/edit',
+          name: 'UserInfoEdit',
+          component: UserInfoEdit,
+        },
       ],
-    },
-    {
-      path: '/photo',
-      name: 'PhotoPage',
-      component: PhotoPage,
     },
     {
       path: '/problem',
@@ -87,9 +105,37 @@ export default new Router({
         },
         {
           path: ':contest_id',
-          name: 'ContestDetail',
           component: ContestDetail,
           children: [
+            {
+              path: '',
+              redirect: 'introduction',
+            },
+            {
+              path: 'introduction',
+              name: 'ContestText',
+              component: ContestText,
+            },
+            {
+              path: 'introduction/editor',
+              name: 'ContestTextEditor',
+              component: ContestTextEditor,
+            },
+            {
+              path: 'register',
+              name: 'ContestRegisterStateDisplay',
+              component: ContestRegisterStateDisplay,
+            },
+            {
+              path: 'register/all/list',
+              name: 'ContestRegisterAllList',
+              component: ContestRegisterAllList,
+            },
+            {
+              path: 'register/passed/list',
+              name: 'ContestRegisterPassedList',
+              component: ContestRegisterPassedList,
+            },
             {
               path: 'problem',
               children: [
@@ -104,8 +150,8 @@ export default new Router({
                 },
                 {
                   path: ':problem_id',
-                  name: 'ProblemDetail',
-                  component: ProblemDetail,
+                  name: 'ContestProblemDetail',
+                  component: ContestProblemDetail,
                 },
               ],
             },
@@ -114,14 +160,14 @@ export default new Router({
               name: 'ContestRank',
               component: ContestRank,
             },
-            {
-              path: ':problem_id',
-              name: 'ContestProblemDetail',
-              component: ContestProblemDetail,
-            },
           ],
         },
       ],
+    },
+    {
+      path: '/help',
+      name: 'HelpPage',
+      component: HelpPage,
     },
     {
       path: '*',

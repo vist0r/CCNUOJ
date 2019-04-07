@@ -21,9 +21,9 @@
     </el-form-item>
 
     <el-form-item label="性别" prop="gender">
-      <el-radio-group size="medium" v-model="registerForm.gender">
-        <el-radio border label="MALE"></el-radio>
-        <el-radio border label="FEMALE"></el-radio>
+      <el-radio-group size="medium" v-model="registerForm.gender" style="float: left;">
+        <el-radio-button label="Male">男</el-radio-button>
+        <el-radio-button label="Female">女</el-radio-button>
       </el-radio-group>
     </el-form-item>
 
@@ -61,36 +61,51 @@ export default {
   data() {
     return {
       registerForm: {
-        name: '',
+        email: '',
+        shortName: '',
+        password: '',
+
+        realName: '',
+        gender: '',
+
         phone: '',
+
         school: '',
         major: '',
-        gender: '',
-        password: '',
       },
       registerRule: {
         email: [
           { required: true, message: '电子邮箱为必填项', trigger: 'blur' },
-          { min: 8, max: 30, message: '电子邮箱长度不符合要求', trigger: 'blur' },
+          {
+            min: 8, max: 30, message: '电子邮箱长度不符合要求', trigger: 'blur',
+          },
         ],
         shortName: [
           { required: true, message: '用户名为必填项', trigger: 'blur' },
-          { min: 3, max: 15, message: '长度在 5 到 20 个字符', trigger: 'blur' },
+          {
+            min: 3, max: 15, message: '长度在 5 到 20 个字符', trigger: 'blur',
+          },
         ],
         password: [
           { required: true, message: '请输入密码', trigger: 'blur' },
-          { min: 6, max: 15, message: '长度在 6 到 15 个字符', trigger: 'blur' },
+          {
+            min: 6, max: 15, message: '长度在 6 到 15 个字符', trigger: 'blur',
+          },
         ],
 
         realName: [
           { required: true, message: '真实姓名为必填项', trigger: 'blur' },
-          { min: 3, max: 15, message: '真实姓名长度限制在 3 到 15 个字符之间', trigger: 'blur' },
+          {
+            min: 3, max: 15, message: '真实姓名长度限制在 3 到 15 个字符之间', trigger: 'blur',
+          },
         ],
         gender: [
           { required: true, message: '性别为必填项', trigger: 'change' },
         ],
         phone: [
-          { min: 11, max: 11, message: '电话号码格式不正确', trigger: 'blur' },
+          {
+            min: 11, max: 11, message: '电话号码格式不正确', trigger: 'blur',
+          },
         ],
 
         school: [
@@ -126,7 +141,20 @@ export default {
               this.$router.push({ name: 'UserLogin' });
             })
             .catch((error) => {
-              this.$message.error('注册失败');
+              switch (error) {
+                case 'NetworkError':
+                  this.$message.error('注册失败：网络错误');
+                  break;
+                case 'DuplicateEmail':
+                  this.$message.error('注册失败：邮箱已被占用');
+                  break;
+                case 'DuplicateShortName':
+                  this.$message.error('注册失败：用户名已被占用');
+                  break;
+                default:
+                  this.$message.error('注册失败：未知错误');
+                  break;
+              }
             });
         } else {
           this.$message.error('注册信息有无效部分');

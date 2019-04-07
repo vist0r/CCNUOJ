@@ -3,65 +3,111 @@
    ContestDetail组件是当我们在ContestList点击某一个比赛的时候,进入到该比赛的详情界面
   -->
 <div>
- <p>{{ contest['title']}}</p>
+
+  <p style="font-size: 70px;">{{ contest['title'] }}</p>
+
   <el-tabs v-model="activeName" @tab-click="handleClick">
-    <el-tab-pane label="题目" name="ContestProblemList">
-      <conques-list :contest_id = this.contestid></conques-list>
+    <el-tab-pane label="介绍" name="ContestText"></el-tab-pane>
+    <el-tab-pane label="报名" name="ContestRegisterStateDisplay">
+      <el-row>
+        <el-button
+          @click="$router.push({name:'ContestRegisterStateDisplay'})"
+          type="primary"
+          style="float: left;">
+          我的报名状态
+        </el-button>
+        <el-button
+          @click="$router.push({name:'ContestRegisterPassedList'})"
+          type="primary"
+          style="float: left;">
+          查看已通过审核列表
+        </el-button>
+        <template v-if="isManager">
+          <el-button
+            @click="$router.push({name:'ContestRegisterAllList'})"
+            type="primary"
+            style="float: left;">
+            管理报名信息
+          </el-button>
+        </template>
+      </el-row>
     </el-tab-pane>
-    <el-tab-pane label="提交记录" name="ContestSubmission">
-      <conques-update></conques-update>
-    </el-tab-pane>
-    <el-tab-pane label="榜单" name="ContestRank">
-      <conques-rank></conques-rank>
-    </el-tab-pane>
+    <el-tab-pane label="题目" disabled></el-tab-pane>
+    <el-tab-pane label="提交记录" disabled></el-tab-pane>
+    <el-tab-pane label="榜单" disabled></el-tab-pane>
   </el-tabs>
+
+  <router-view></router-view>
+
 </div>
 
 </template>
 
 <script>
-import ContestRank from './ContestRank';
-import ContestProblemList from './Problem/ContestProblemList';
-import ContestDetail from './Problem/ContestProblemDetail';
+import { mapGetters } from 'vuex';
+import { getContest } from '@/api/Contest';
 
 export default {
   name: 'ContestDetail',
+
   data() {
     return {
-      contest: null,
-      contestid: null,
+      contest: {},
       activeName: '',
     };
   },
-  created() {
-    this.activeName = 'ConquesList';
+  computed: {
+    isManager() {
+      if ((this.contest !== undefined) && (this.contest.author.id === this.userID)) {
+        return true;
+      } else if (this.$store.getters['user/isSuper'] === true) {
+        return true;
+      }
+      return false;
+    },
+    contestID() {
+      return this.$route.params.contest_id;
+    },
+    ...mapGetters({
+      userID: 'user/id',
+      isSuper: 'user/isSuper',
+    }),
   },
+
   methods: {
+    handleClick() {
+      const name = this.activeName;
+      if (name) {
+        this.$router.push({
+          name,
+          params: {
+            contest_id: this.contestID,
+          },
+        });
+      }
+    },
   },
+
   mounted() {
-    this.$http.get('/api/contest')
-      .then((res) => {
-        this.contestid = this.$route.params.contest_id;
-        const list = res.body.data;
-        for (const contest of list) {
-          if (contest.id === this.contestid) {
-            this.contest = contest;
-          }
-        }
+    this.activeName = this.$route.name;
+    getContest(this.contestID)
+      .then((result) => {
+        this.contest = result;
       })
       .catch((error) => {
-        console.log(error);
+        switch (error) {
+          case 'NetworkError':
+            this.$message.error('获取信息失败：网络错误');
+            break;
+          default:
+            this.$message.error('获取信息失败：未知错误');
+            break;
+        }
       });
-  },
-  components: {
-    ContestRank,
-    ContestProblemList,
-    ContestDetail,
   },
 };
 
 </script>
 
 <style scoped>
-
 </style>

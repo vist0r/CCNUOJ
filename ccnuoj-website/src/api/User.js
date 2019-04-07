@@ -2,22 +2,21 @@ import request from './request';
 
 import * as PasswordHash from './PasswordHash';
 
-export const userRegister = ({
-  email,
-  shortName,
-  realPersonInfo,
-  extraInfo,
-  password,
-}) => {
-  const salt = PasswordHash.generateRandomSalt();
-  const hashResult = PasswordHash.passwordHash(salt, password);
+const userRegisterWithFixedSalt = (fixedSalt, userInfo) => {
+  const randomSalt = PasswordHash.generateRandomSalt();
+  const hashResult = PasswordHash.passwordHash(
+    randomSalt,
+    fixedSalt,
+    userInfo.password,
+  );
+
   const requestData = {
-    email,
-    shortName,
-    realPersonInfo,
-    extraInfo,
+    email: userInfo.email,
+    shortName: userInfo.shortName,
+    realPersonInfo: userInfo.realPersonInfo,
+    extraInfo: userInfo.extraInfo,
     authentication: {
-      salt,
+      salt: randomSalt,
       hashResult,
     },
   };
@@ -25,6 +24,48 @@ export const userRegister = ({
     request.post('/user', requestData)
       .then((response) => {
         resolve(response.data.userID);
+      })
+      .catch((error) => {
+        if ('response' in error) {
+          const { data } = error.response;
+          if ('reason' in data) {
+            console.log(['reason', data.reason]);
+            reject(data.reason);
+          } else {
+            reject('UnknownError');
+          }
+        } else {
+          reject('NetworkError');
+        }
+      });
+  });
+};
+
+export const userRegister = ({
+  email,
+  shortName,
+  realPersonInfo,
+  extraInfo,
+  password,
+}) => {
+  const userInfo = {
+    email,
+    shortName,
+    realPersonInfo,
+    extraInfo,
+    password,
+  };
+
+  return new Promise((resolve, reject) => {
+    PasswordHash.fetchFixedSalt()
+      .then((fixedSalt) => {
+        userRegisterWithFixedSalt(fixedSalt, userInfo)
+          .then((userID) => {
+            resolve(userID);
+          })
+          .catch((error) => {
+            reject(error);
+          });
       })
       .catch((error) => {
         reject(error);
@@ -36,13 +77,18 @@ const userLoginInternal = ({
   authInfo,
   password,
 }) => {
-  const id = authInfo.id;
-  const salt = authInfo.salt;
-  const hashResult = PasswordHash.passwordHash(salt, password);
+  const { id, salt } = authInfo;
   return new Promise((resolve, reject) => {
-    request.post(`/user/authentication/id/${id}`, { hashResult })
-      .then((res) => {
-        resolve(res.data.result);
+    PasswordHash.fetchFixedSalt()
+      .then((fixedSalt) => {
+        const hashResult = PasswordHash.passwordHash(salt, fixedSalt, password);
+        request.post(`/user/authentication/id/${id}`, { hashResult })
+          .then((res) => {
+            resolve(res.data.result);
+          })
+          .catch((error) => {
+            reject(error);
+          });
       })
       .catch((error) => {
         reject(error);
@@ -94,7 +140,7 @@ export const userLoginByShortName = ({
     });
 });
 
-export const authEcho = (token) => new Promise((resolve, reject) => {
+export const userAuthEcho = (token) => new Promise((resolve, reject) => {
   request.get('/user/authentication/echo', {
     headers: {
       'X-CCNU-AUTH-TOKEN': token,
@@ -105,5 +151,35 @@ export const authEcho = (token) => new Promise((resolve, reject) => {
     })
     .catch((error) => {
       reject(error);
+    });
+});
+
+export const getUserInfo = (userID) => new Promise((resolve, reject) => {
+  request.get(`/user/id/${userID}`)
+    .then((response) => {
+      resolve(response.data.result);
+    })
+    .catch((error) => {
+      if ('response' in error) {
+        const { data } = error.response;
+        reject(data.reason);
+      } else {
+        reject('NetworkError');
+      }
+    });
+});
+
+export const updateUserInfo = (userID, userInfo) => new Promise((resolve, reject) => {
+  request.put(`/user/id/${userID}/detail_info`, userInfo)
+    .then((response) => {
+      resolve(response.data.result);
+    })
+    .catch((error) => {
+      if ('response' in error) {
+        const { data } = error.response;
+        reject(data.reason);
+      } else {
+        reject('NetworkError');
+      }
     });
 });
